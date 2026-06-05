@@ -7,3 +7,5 @@ jupyter==1.0.0
 notebook==7.2.0
 ipykernel==6.29.4
 sqlalchemy==2.0.30
+plotly==5.22.0
+squarify==0.4.4
