@@ -15,6 +15,8 @@ Built for a **Berlin tech portfolio** — demonstrates SQL, Python, feature engi
 
 ![Executive dashboard — RFM segments, negative-review drivers, category retention and delivery-delay impact on review score](dashboard/dashboard_final.png)
 
+🖱️ **[Open the interactive Plotly dashboard](https://luciaparvaz.github.io/olist-customer-analysis/english/dashboard/dashboard_final.html)** — GitHub can't render the raw HTML file inline (it's several MB with `plotly.js` embedded), so it's served via GitHub Pages instead.
+
 ---
 
 ## Stack

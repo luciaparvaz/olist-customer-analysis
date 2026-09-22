@@ -12,6 +12,8 @@ identical numbers; see [`english/README.md`](english/README.md).
 
 ![Executive dashboard — RFM segments, negative-review drivers, category retention and delivery-delay impact on review score](dashboard/dashboard_final.png)
 
+🖱️ **[Open the interactive Plotly dashboard](https://luciaparvaz.github.io/olist-customer-analysis/dashboard/dashboard_final.html)** — GitHub can't render the raw HTML file inline (it's 3.8 MB with `plotly.js` embedded), so it's served via GitHub Pages instead.
+
 ---
 
 ## Stack
