@@ -1,14 +1,17 @@
-# Customer Behavior Analysis — Olist Brazilian E-Commerce
+# Customer Behavior Analysis — Olist Brazilian E-Commerce (English mirror)
+
+This is a full English mirror of the project's notebooks, SQL and dashboard. The root
+[`README.md`](../README.md) is already written in English, but the notebook markdown, code
+comments and the dashboard's Plotly labels were originally in Spanish. Everything under this
+`english/` folder — notebooks, SQL, `load_data.py` and the dashboard — has been translated and
+**re-executed independently** (its own `data/olist.db`, its own `dashboard/*.png` and
+`dashboard_final.html`), and every number below has been read back from that re-execution and
+checked against the original Spanish notebooks. They match exactly.
 
 End-to-end data analysis project following the **CRISP-DM** methodology.  
 Built for a **Berlin tech portfolio** — demonstrates SQL, Python, feature engineering, RFM segmentation and business storytelling on a real-world dataset.
 
 **Dataset:** [Brazilian E-Commerce Public Dataset by Olist](https://www.kaggle.com/datasets/olistbr/brazilian-ecommerce) (Kaggle) — 100K orders, 2016–2018.
-
-🌐 **This README is in English, but the notebooks, SQL and dashboard themselves are written in
-Spanish** (markdown prose, code comments, chart labels). A full mirror with everything translated
-to English — [`english/`](english/) — has been independently re-executed end to end and produces
-identical numbers; see [`english/README.md`](english/README.md).
 
 ---
 
@@ -19,8 +22,7 @@ identical numbers; see [`english/README.md`](english/README.md).
 | Language | Python 3.10 |
 | Storage | SQLite (via `sqlite3` + SQLAlchemy) |
 | Analysis | Pandas 2.2 · NumPy 1.26 |
-| Visualization | Matplotlib 3.9 · Seaborn 0.13 |
-| ML | Scikit-learn 1.5 |
+| Visualization | Matplotlib 3.9 · Seaborn 0.13 · Plotly 5.22 |
 | Notebooks | Jupyter 7.2 |
 | SQL | CTEs · Window Functions · Aggregations |
 
@@ -29,6 +31,7 @@ identical numbers; see [`english/README.md`](english/README.md).
 ## Project Structure
 
 ```
+english/
 ├── data/                          # Raw CSVs + SQLite DB (not versioned)
 ├── sql/
 │   ├── load_data.py               # Ingest CSVs → SQLite (9 tables)
@@ -40,18 +43,16 @@ identical numbers; see [`english/README.md`](english/README.md).
 │   ├── 03_negative_reviews.ipynb  # Phase 4 — Negative Review Drivers
 │   ├── 04_rfm_segmentation.ipynb  # Phase 4 — RFM Segmentation
 │   └── 05_evaluation.ipynb        # Phase 5 — Evaluation & Recommendations
-├── dashboard/                     # 23 exported charts (PNG)
-├── requirements.txt
-└── README.md
+├── dashboard/                     # 06_dashboard.ipynb + 24 exported charts (PNG) + dashboard_final.html
+└── README.md                      # this file
 ```
 
 ---
 
 ## Key Results
 
-*(Portfolio review note: several figures below were corrected after an audit found they did not
-match the notebooks' own outputs — see each item for what changed and why. All numbers are now
-read directly from the re-executed notebooks, not typed by hand.)*
+*(Same figures as the Spanish original — re-derived independently by re-running this English
+pipeline end to end, not copied over.)*
 
 ### Customer Segmentation (RFM)
 
@@ -59,7 +60,7 @@ read directly from the re-executed notebooks, not typed by hand.)*
 explicit business cuts, not automatic quintiles**: 97.0% of customers have exactly 1 order, so a
 quintile split on Frequency ties nearly the whole base and breaks the tie by row order (effectively
 random) — verified to produce segments statistically indistinguishable from noise (uniform average
-Monetary score ≈3.0 across every segment). F_score is now `1 order → 1`, `2 orders → 3`, `≥3 orders
+Monetary score ≈3.0 across every segment). F_score is `1 order → 1`, `2 orders → 3`, `≥3 orders
 → 5` (see `notebooks/04_rfm_segmentation.ipynb`, Section 3). R and M keep quintile scoring, which is
 appropriate for their continuous distributions.
 
@@ -72,13 +73,10 @@ appropriate for their continuous distributions.
 | **At Risk** | 991 | 1.1% | 382 days | 2.08 orders | R$247 |
 | **Champions** | 121 | 0.1% | 89 days | 3.51 orders | R$462 |
 
-> **Insight:** With the corrected scoring, `At Risk` and `Loyal` are small but *genuine* segments —
-> real repeat customers (Frequency ≥2, verified with checks that don't reuse the assignment rule),
-> not noise. The bulk of the base (`Lost` + `New Customers`, 77.6%) are one-time buyers; the real
-> lever is converting single-purchase customers into repeat ones, not winning back a small `At Risk`
-> group. *(A previous version of this README cited "At Risk, 24%, the largest segment" — that
-> figure came from the uncorrected Frequency scoring above; `At Risk` was never actually the
-> largest segment once F is scored honestly.)*
+> **Insight:** `At Risk` and `Loyal` are small but *genuine* segments — real repeat customers
+> (Frequency ≥2, verified with checks that don't reuse the assignment rule), not noise. The bulk of
+> the base (`Lost` + `New Customers`, 77.6%) are one-time buyers; the real lever is converting
+> single-purchase customers into repeat ones, not winning back a small `At Risk` group.
 
 ---
 
@@ -95,19 +93,12 @@ Mann-Whitney U test, with Benjamini-Hochberg correction across the 6 candidate v
 | **#2** | `delivery_delay_days` | −0.177 | Lateness vs. the promised date also predicts dissatisfaction — but see the leakage caveat below |
 | **#3** | `n_items` | −0.107 | Orders with more items get slightly worse reviews (more logistics friction) |
 
-*(A previous version of this table listed `delivery_delay_days` as #1 and `freight_ratio` as #3.
-Neither held up: the notebook's own correlation output already showed `delivery_days` with a
-stronger coefficient, and `freight_ratio`'s Spearman rho is −0.031 — R²≈0.001, and its median score
-is not even monotonic across review scores. `freight_ratio` is dropped as a driver.)*
-
-> **Insight:** Late orders get **6.7× more** negative reviews than on-time ones (62.4% vs. 9.3% —
-> a previous version of this README cited "~3×, 5% to 15–16%", which matched neither the notebook's
-> printed output). **Important nuance found in this review:** ~84% of reviews on late orders are
-> written *before* the package actually arrives (99% of those after the promised date had already
-> passed) — so much of the "delay effect" reflects frustration from waiting on a package already
-> known to be late, not the experience of receiving it late. Proactive status communication during
-> the wait — not only improving punctuality — is the action this actually supports
-> (`notebooks/03_negative_reviews.ipynb`, Section 3b).
+> **Insight:** Late orders get **6.7× more** negative reviews than on-time ones (62.4% vs. 9.3%).
+> **Important nuance:** ~84% of reviews on late orders are written *before* the package actually
+> arrives (99% of those after the promised date had already passed) — so much of the "delay effect"
+> reflects frustration from waiting on a package already known to be late, not the experience of
+> receiving it late. Proactive status communication during the wait — not only improving punctuality
+> — is the action this actually supports (`notebooks/03_negative_reviews.ipynb`, Section 3b).
 
 ---
 
@@ -116,10 +107,6 @@ is not even monotonic across review scores. `freight_ratio` is dropped as a driv
 Retention = % of customers who made a second purchase (any category) after their first.
 Only categories with ≥ 50 first-time customers included in the per-category ranking below.
 **Global retention rate (entire customer base, no category filter): 3.0%** (2,801 / 93,337).
-
-*(A previous version of this README cited "~5%". That figure summed retained/total only over the
-20 categories a `LIMIT 20` in `sql/03_retention.sql` let through — now removed. The true rate over
-the whole base is 3.0%, matching `notebooks/05_evaluation.ipynb`, Section 3.2.)*
 
 **Highest retention** (by point estimate; see the notebook for the Wilson-CI-robust ranking):
 
@@ -130,10 +117,7 @@ the whole base is 3.0%, matching `notebooks/05_evaluation.ipynb`, Section 3.2.)*
 | 3 | `furniture_bedroom` | 5.95% | 84 |
 
 **Lowest retention** (0%, ≥50 customers each): `costruction_tools_tools`, `tablets_printing_image`,
-`small_appliances_home_oven_and_coffee`. *(A previous version of this README named
-`agro_industry_and_commerce`, `fashio_female_clothing`, `home_comfort_2` here — those never had the
-lowest retention; they were positions 18–20 of the **best** categories, an artifact of the `LIMIT
-20` that also capped the ranking table.)*
+`small_appliances_home_oven_and_coffee`.
 
 > **Insight:** `home_appliances` retains ~3× the global rate. Loyalty strategies should be
 > category-specific; the Wilson-CI ranking in the notebook should be used over the raw point
@@ -162,27 +146,25 @@ Exploratory analysis of all 9 Olist tables (99,441 orders, 2016–2018).
 | **Volume** | 99K orders · 112K items · 99K reviews |
 | **Data quality** | `review_comment_title`: 88% null · `geolocation`: 261K duplicates |
 | **Review score** | Bimodal distribution — peaks at 1 and 5 (typical e-commerce pattern) |
-| **Payment value** | Strong right skew — median R$86.50, max R$13,440 |
-| **Order status** | 96%+ delivered, <1% cancelled |
+| **Payment value** | Strong right skew — median R$105.29, max R$13,664 |
+| **Order status** | 97%+ delivered, <1% cancelled |
 | **Trend** | Sustained growth; peak Nov 2017 (Brazilian Black Friday) |
 
 ---
 
 ### Phase 3 — Data Preparation · `notebooks/02_data_prep.ipynb`
 
-Produces `data/olist_master.csv`: **96,457 rows × 20 columns** (added `review_creation_date` and
-`review_before_delivery` in this review — see the leakage check below).
+Produces `data/olist_master.csv`: **96,457 rows × 20 columns**.
 
 **Key decisions:**
 - Filter `delivered` orders only — only these have a real delivery date to calculate delay
-- Remove `delivery_days ≤ 0` — **13** corrupt records (delivery before purchase; a previous version
-  of this README said 139, which matched no run of this notebook)
+- Remove `delivery_days ≤ 0` — **13** corrupt records (delivery before purchase)
 - Deduplicate reviews by `review_answer_timestamp` (keep latest)
 - Left join reviews — missing = no review filed, not satisfaction neutral
 - Translate product categories PT → EN; fill unmapped as `unknown`
-- **New in this review — temporal-precedence check:** verify whether `review_creation_date` comes
-  before `order_delivered_customer_date` (i.e., whether the review predates the very delivery
-  experience it's later used to explain). See Phase 4a below.
+- **Temporal-precedence check:** verify whether `review_creation_date` comes before
+  `order_delivered_customer_date` (i.e., whether the review predates the very delivery experience
+  it's later used to explain). See Phase 4a below.
 
 **Engineered features:**
 
@@ -203,21 +185,20 @@ Produces `data/olist_master.csv`: **96,457 rows × 20 columns** (added `review_c
 
 Statistical analysis of what predicts a `review_score ≤ 2`.
 
-**Method:** **Spearman correlation** (`review_score` is ordinal — a previous version of this
-notebook used Pearson), Mann-Whitney U with rank-biserial effect size, Kruskal-Wallis H,
-Benjamini-Hochberg correction across candidate drivers, violin/box plots.
+**Method:** **Spearman correlation** (`review_score` is ordinal), Mann-Whitney U with
+rank-biserial effect size, Kruskal-Wallis H, Benjamini-Hochberg correction across candidate
+drivers, violin/box plots.
 
-**Temporal-leakage check (new in this review):** 84% of late orders (`delivery_delay_days > 0`)
-have their review written *before* the package was actually delivered — 99% of those after the
-promised delivery date had already passed. This means the "delay effect" on review score partly
-reflects frustration from waiting on a known-late package, not the experience of receiving it late.
-Quantified in Section 3b of the notebook; the effect survives in the clean (post-delivery)
-subsample, but more weakly.
+**Temporal-leakage check:** 84% of late orders (`delivery_delay_days > 0`) have their review
+written *before* the package was actually delivered — 99% of those after the promised delivery
+date had already passed. This means the "delay effect" on review score partly reflects frustration
+from waiting on a known-late package, not the experience of receiving it late. Quantified in
+Section 3b of the notebook; the effect survives in the clean (post-delivery) subsample, but more
+weakly.
 
-**Multicollinearity note:** `delivery_delay_days` and `delivery_days` are correlated at **r ≈ 0.61**
-(Pearson; a previous version of this README said "r ≈ 0.7", which did not match the notebook's own
-heatmap). Given `delivery_days` is now the stronger driver, prefer it as the primary predictor in
-any downstream model, or include both with a multicollinearity-aware model.
+**Multicollinearity note:** `delivery_delay_days` and `delivery_days` are correlated at
+**r ≈ 0.60** (Pearson). Given `delivery_days` is the stronger driver, prefer it as the primary
+predictor in any downstream model, or include both with a multicollinearity-aware model.
 
 ---
 
@@ -225,16 +206,14 @@ any downstream model, or include both with a multicollinearity-aware model.
 
 RFM scoring on `customer_unique_id` (stable cross-order identifier): quintiles for Recency and
 Monetary, **explicit business cuts for Frequency** (see "Key Results" above for why — 97% of
-customers have Frequency=1, so a quintile split there ties nearly the entire base and a previous
-version of this notebook broke that tie by row order, effectively at random).
+customers have Frequency=1, so a quintile split there ties nearly the entire base).
 
-- **Snapshot date:** 2018-08-30 (day after last order in dataset; a previous version of this
-  README said 2018-10-18, which matched no run of this notebook)
+- **Snapshot date:** 2018-08-30 (day after last order in dataset)
 - **Scoring:** R, M via `pd.qcut` into quintiles 1–5 (R inverted, lower recency = higher score);
   F via `pd.cut` with business cuts (1 order→1, 2 orders→3, ≥3 orders→5)
 - **Segment rules:** based on R_score and F_score thresholds
-- **Validation (new in this review):** checks that don't reuse the assignment rule (Monetary and
-  observed Frequency by segment) confirm the segments discriminate real behavior, not noise — see
+- **Validation:** checks that don't reuse the assignment rule (Monetary and observed Frequency by
+  segment) confirm the segments discriminate real behavior, not noise — see
   `notebooks/05_evaluation.ipynb`, Section 2.2.
 
 Produces `data/olist_rfm.csv` (93,337 rows) and `data/rfm_segments.csv`.
@@ -255,19 +234,20 @@ Produces `data/olist_rfm.csv` (93,337 rows) and `data/rfm_segments.csv`.
 
 Consolidates all findings. Validates RFM coherence with **4/4 falsifiable consistency checks**
 (Section 2.2) — comparing Monetary and observed Frequency across segments, variables the segment
-*assignment rule itself never uses*. *(A previous version of this notebook had 4 checks that
-compared `R_score`/`F_score` between segments defined by thresholds on those same scores — they
-could not fail by construction and validated nothing against real behavior; see "Customer
-Segmentation" above for why that mattered.)* Cross-references RFM segments with satisfaction data,
-and produces a 4-panel executive dashboard.
+*assignment rule itself never uses*. Cross-references RFM segments with satisfaction data, and
+produces a 4-panel executive dashboard.
 
-**Cross-segment satisfaction finding:** Satisfaction metrics are broadly consistent across segments — the delivery delay effect dominates over segment membership, suggesting the supply chain improvement has higher priority than CRM alone.
+**Cross-segment satisfaction finding:** Satisfaction metrics are broadly consistent across
+segments — the delivery delay effect dominates over segment membership, suggesting the supply
+chain improvement has higher priority than CRM alone.
 
 ---
 
-### Phase 6 — Deployment
+### Phase 6 — Deployment · `dashboard/06_dashboard.ipynb`
 
-- 23 charts exported to `dashboard/` (PNG, 2.5 MB total)
+- 24 charts exported to `dashboard/` (PNG)
+- `dashboard/dashboard_final.png` — static 2×2 executive panel (150 DPI)
+- `dashboard/dashboard_final.html` — self-contained interactive dashboard (Plotly, embedded `plotly.js`)
 - `sql/02_data_preparation.sql` — reproducible master table in pure SQL
 - `sql/03_retention.sql` — retention analysis with `ROW_NUMBER`, `RANK`, `NTILE` window functions
 - All notebooks executed with full cell outputs committed
@@ -286,7 +266,7 @@ and produces a 4-panel executive dashboard.
 ```bash
 # 1. Clone the repository
 git clone https://github.com/luciaparvaz/olist-customer-analysis.git
-cd olist-customer-analysis
+cd olist-customer-analysis/english
 
 # 2. Create and activate virtual environment
 python -m venv .venv
@@ -296,13 +276,13 @@ python -m venv .venv
 # macOS / Linux
 source .venv/bin/activate
 
-# 3. Install dependencies
-pip install -r requirements.txt
+# 3. Install dependencies (same as the root project)
+pip install -r ../requirements.txt
 ```
 
 ### Data
 
-Download the dataset from Kaggle and place all CSV files in `data/`:
+Download the dataset from Kaggle and place all CSV files in `english/data/`:
 
 ```
 kaggle datasets download -d olistbr/brazilian-ecommerce
@@ -342,6 +322,7 @@ Run notebooks in this order:
 3. `03_negative_reviews.ipynb` → review driver analysis
 4. `04_rfm_segmentation.ipynb` → generates `data/olist_rfm.csv`
 5. `05_evaluation.ipynb` → consolidated evaluation + executive dashboard
+6. `dashboard/06_dashboard.ipynb` → static + interactive dashboard artifacts
 
 ---
 
@@ -357,7 +338,8 @@ Run notebooks in this order:
 | `notebooks/03_negative_reviews.ipynb` | Correlation analysis, statistical tests, driver ranking, category breakdown |
 | `notebooks/04_rfm_segmentation.ipynb` | Quintile scoring, segment assignment, scatter/violin/heatmap visuals |
 | `notebooks/05_evaluation.ipynb` | Segment validation, cross-analysis, executive dashboard, recommendations |
-| `dashboard/` | 23 PNG charts covering all analysis phases |
+| `dashboard/06_dashboard.ipynb` | Static + interactive dashboard generation |
+| `dashboard/` | 24 PNG charts + `dashboard_final.png` + `dashboard_final.html` |
 
 ---
 
