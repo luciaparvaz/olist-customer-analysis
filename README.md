@@ -10,6 +10,8 @@ Spanish** (markdown prose, code comments, chart labels). A full mirror with ever
 to English — [`english/`](english/) — has been independently re-executed end to end and produces
 identical numbers; see [`english/README.md`](english/README.md).
 
+![Executive dashboard — RFM segments, negative-review drivers, category retention and delivery-delay impact on review score](dashboard/dashboard_final.png)
+
 ---
 
 ## Stack

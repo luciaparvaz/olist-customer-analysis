@@ -13,6 +13,8 @@ Built for a **Berlin tech portfolio** — demonstrates SQL, Python, feature engi
 
 **Dataset:** [Brazilian E-Commerce Public Dataset by Olist](https://www.kaggle.com/datasets/olistbr/brazilian-ecommerce) (Kaggle) — 100K orders, 2016–2018.
 
+![Executive dashboard — RFM segments, negative-review drivers, category retention and delivery-delay impact on review score](dashboard/dashboard_final.png)
+
 ---
 
 ## Stack
