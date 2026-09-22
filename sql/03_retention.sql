@@ -75,6 +75,26 @@ returning_customers AS (
 -- Nos dice "¿qué categoría adquirió el cliente inicialmente?"
 -- Usamos esta categoría para medir si esa categoría retiene clientes.
 -- -------------------------------------------------------------
+-- CORREGIDO (revisión de portfolio, prioridad 3): la versión anterior unía
+-- order_items sin agregar, así que un primer pedido con varios ítems
+-- generaba varias filas por cliente; si esos ítems eran de categorías
+-- distintas, el cliente quedaba contado en MÁS DE UNA categoría en
+-- category_retention_stats (fan-out). Aquí se elige un único ítem
+-- "principal" por pedido (el de mayor precio) antes de unir con producto/
+-- categoría, igual que el criterio de negocio usado en 02_data_preparation.
+main_item_per_order AS (
+    SELECT order_id, product_id
+    FROM (
+        SELECT
+            order_id,
+            product_id,
+            ROW_NUMBER() OVER (
+                PARTITION BY order_id ORDER BY price DESC, order_item_id ASC
+            ) AS rn
+        FROM order_items
+    )
+    WHERE rn = 1
+),
 first_orders_with_category AS (
     SELECT
         os.customer_unique_id,
@@ -83,8 +103,8 @@ first_orders_with_category AS (
         os.total_orders,
         COALESCE(t.product_category_name_english, 'unknown') AS first_category_en
     FROM order_sequence os
-    -- Join con order_items para obtener el producto del primer pedido
-    INNER JOIN order_items oi
+    -- Join con el ítem principal (mayor precio) del primer pedido
+    INNER JOIN main_item_per_order oi
         ON os.order_id = oi.order_id
     -- Join con products para obtener la categoría del producto
     LEFT JOIN products p
@@ -188,8 +208,14 @@ first_vs_repeat_stats AS (
 
 
 -- =============================================================
--- RESULTADO 1: Categorías rankeadas por tasa de retención
--- Top 20 categorías con sus métricas de retención y ranking.
+-- RESULTADO 1: TODAS las categorías (>=50 clientes) rankeadas por
+-- tasa de retención.
+-- CORREGIDO (revisión de portfolio, prioridad 3): antes tenía
+-- "LIMIT 20", así que "las peores categorías" que citaba el notebook 05
+-- (nsmallest(3) sobre este resultado) eran en realidad los puestos 18-20
+-- de las MEJORES, nunca las categorías con retención más baja real
+-- (varias con 0%, fuera del top 20). Sin LIMIT, el notebook filtra o
+-- pagina como necesite.
 -- =============================================================
 SELECT
     retention_rank,
@@ -202,8 +228,7 @@ SELECT
     retention_quartile,
     volume_rank
 FROM category_ranking
-ORDER BY retention_rank
-LIMIT 20;
+ORDER BY retention_rank;
 
 
 -- =============================================================

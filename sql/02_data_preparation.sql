@@ -47,21 +47,45 @@ items_aggregated AS (
 
 -- -------------------------------------------------------------
 -- CTE 3: reviews_per_order
--- En teoría hay una reseña por pedido, pero puede haber duplicados.
--- Tomamos la reseña con mayor review_id (la más reciente) por seguridad.
+-- En teoría hay una reseña por pedido, pero puede haber duplicados
+-- (99.224 filas de order_reviews sobre 98.673 order_id únicos).
+-- CORREGIDO (revisión de portfolio, prioridad 5): el filtro anterior
+-- ("WHERE review_id IN (SELECT MAX(review_id) ... GROUP BY order_id)")
+-- tenía dos bugs: (a) review_id es un hash, MAX() es orden lexicográfico,
+-- no "la más reciente"; (b) el IN no está correlacionado con order_id, así
+-- que puede sobrevivir más de una fila por pedido si dos order_id distintos
+-- comparten el mismo MAX(review_id) global (no ocurre aquí, pero el filtro
+-- no lo garantiza). Se sustituye por ROW_NUMBER particionado por order_id,
+-- ordenado por review_answer_timestamp real, con un desempate explícito por
+-- review_id para determinismo.
+-- Se conserva review_creation_date/review_answer_timestamp (antes se
+-- descartaban en el notebook 02) para poder verificar en el notebook 03 si
+-- la reseña se escribió antes o después de la entrega real del pedido
+-- (posible fuga temporal en el análisis de drivers de reseña negativa).
 -- -------------------------------------------------------------
+reviews_deduped AS (
+    SELECT
+        order_id,
+        review_score,
+        review_creation_date,
+        review_answer_timestamp,
+        ROW_NUMBER() OVER (
+            PARTITION BY order_id
+            ORDER BY review_answer_timestamp DESC, review_id DESC
+        ) AS rn
+    FROM order_reviews
+),
 reviews_per_order AS (
     SELECT
         order_id,
         review_score,
+        review_creation_date,
+        review_answer_timestamp,
         -- Flag de reseña negativa: scores 1 y 2 indican insatisfacción clara.
         -- Score 3 es neutral y se excluye del flag negativo.
         CASE WHEN review_score <= 2 THEN 1 ELSE 0 END  AS is_negative_review
-    FROM order_reviews
-    -- Deduplicar: quedarnos con la reseña de mayor review_id por order_id
-    WHERE review_id IN (
-        SELECT MAX(review_id) FROM order_reviews GROUP BY order_id
-    )
+    FROM reviews_deduped
+    WHERE rn = 1
 ),
 
 -- -------------------------------------------------------------
@@ -133,6 +157,14 @@ master_table AS (
         -- Satisfacción del cliente
         r.review_score,
         r.is_negative_review,
+        -- Conservadas (antes se descartaban) para poder verificar si la reseña
+        -- se escribió antes o después de la entrega real (posible fuga temporal
+        -- en el análisis de drivers de la Fase 4/notebook 03).
+        r.review_creation_date,
+        r.review_answer_timestamp,
+        CASE WHEN r.review_creation_date IS NOT NULL
+                  AND r.review_creation_date < o.order_delivered_customer_date
+             THEN 1 ELSE 0 END AS review_before_delivery,
 
         -- Peso del producto (proxy de categoría/tamaño del paquete)
         pc.product_weight_g

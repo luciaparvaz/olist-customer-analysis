@@ -44,44 +44,79 @@ Built for a **Berlin tech portfolio** — demonstrates SQL, Python, feature engi
 
 ## Key Results
 
+*(Portfolio review note: several figures below were corrected after an audit found they did not
+match the notebooks' own outputs — see each item for what changed and why. All numbers are now
+read directly from the re-executed notebooks, not typed by hand.)*
+
 ### Customer Segmentation (RFM)
 
-93,337 unique customers segmented using Recency · Frequency · Monetary quintile scoring (1–5).
+93,337 unique customers segmented using Recency · Frequency · Monetary. **Frequency is scored with
+explicit business cuts, not automatic quintiles**: 97.0% of customers have exactly 1 order, so a
+quintile split on Frequency ties nearly the whole base and breaks the tie by row order (effectively
+random) — verified to produce segments statistically indistinguishable from noise (uniform average
+Monetary score ≈3.0 across every segment). F_score is now `1 order → 1`, `2 orders → 3`, `≥3 orders
+→ 5` (see `notebooks/04_rfm_segmentation.ipynb`, Section 3). R and M keep quintile scoring, which is
+appropriate for their continuous distributions.
 
 | Segment | Customers | % of base | Avg Recency | Avg Frequency | Avg Monetary |
 |---------|----------:|----------:|------------:|--------------:|-------------:|
-| **At Risk** | 22,233 | 24% | 395 days | 1.0 orders | R$144 |
-| **Loyal** | 18,819 | 20% | 169 days | 1.0 orders | R$138 |
-| **Lost** | 15,102 | 16% | 395 days | 1.0 orders | R$141 |
-| **Champions** | 14,950 | 16% | 90 days | 1.1 orders | R$151 |
-| **Others** | 14,807 | 16% | 154 days | 1.0 orders | R$136 |
-| **New Customers** | 7,426 | 8% | 91 days | 1.0 orders | R$139 |
+| **Lost** | 36,344 | 38.9% | 395 days | 1.00 orders | R$140 |
+| **New Customers** | 36,132 | 38.7% | 90 days | 1.00 orders | R$140 |
+| **Others** | 18,060 | 19.3% | 220 days | 1.00 orders | R$130 |
+| **Loyal** | 1,689 | 1.8% | 135 days | 2.03 orders | R$254 |
+| **At Risk** | 991 | 1.1% | 382 days | 2.08 orders | R$247 |
+| **Champions** | 121 | 0.1% | 89 days | 3.51 orders | R$462 |
 
-> **Insight:** `At Risk` is the largest segment (24%). These were active customers now dormant for ~13 months — the highest-ROI win-back opportunity without new customer acquisition costs.
+> **Insight:** With the corrected scoring, `At Risk` and `Loyal` are small but *genuine* segments —
+> real repeat customers (Frequency ≥2, verified with checks that don't reuse the assignment rule),
+> not noise. The bulk of the base (`Lost` + `New Customers`, 77.6%) are one-time buyers; the real
+> lever is converting single-purchase customers into repeat ones, not winning back a small `At Risk`
+> group. *(A previous version of this README cited "At Risk, 24%, the largest segment" — that
+> figure came from the uncorrected Frequency scoring above; `At Risk` was never actually the
+> largest segment once F is scored honestly.)*
 
 ---
 
 ### Top 3 Drivers of Negative Reviews
 
-Negative review defined as `review_score ≤ 2` (13% of all reviews with score).  
-Statistical evidence: Pearson correlation + Mann-Whitney U test.
+Negative review defined as `review_score ≤ 2` (12.8% of orders with a review).
+Statistical evidence: **Spearman correlation** (not Pearson — `review_score` is ordinal) +
+Mann-Whitney U test, with Benjamini-Hochberg correction across the 6 candidate variables tested
+(`notebooks/03_negative_reviews.ipynb`, Sections 2 and 8).
 
-| Rank | Feature | Pearson r with score | Finding |
+| Rank | Feature | Spearman rho | Finding |
 |------|---------|---------------------:|---------|
-| **#1** | `delivery_delay_days` | Strongest negative | Late orders generate **3× more** negative reviews than on-time orders (p < 0.001) |
-| **#2** | `delivery_days` | Second negative | Total delivery time independently predicts satisfaction (Kruskal-Wallis significant) |
-| **#3** | `freight_ratio` | Third negative | High freight-to-price ratio correlates with dissatisfaction regardless of delivery time |
+| **#1** | `delivery_days` | −0.235 | Total purchase→delivery time is the single strongest driver of dissatisfaction |
+| **#2** | `delivery_delay_days` | −0.177 | Lateness vs. the promised date also predicts dissatisfaction — but see the leakage caveat below |
+| **#3** | `n_items` | −0.107 | Orders with more items get slightly worse reviews (more logistics friction) |
 
-> **Insight:** When a package arrives late vs. the promised date, negative review rate jumps from ~5% to ~15–16%. Communicating delays proactively would be the single highest-impact action.
+*(A previous version of this table listed `delivery_delay_days` as #1 and `freight_ratio` as #3.
+Neither held up: the notebook's own correlation output already showed `delivery_days` with a
+stronger coefficient, and `freight_ratio`'s Spearman rho is −0.031 — R²≈0.001, and its median score
+is not even monotonic across review scores. `freight_ratio` is dropped as a driver.)*
+
+> **Insight:** Late orders get **6.7× more** negative reviews than on-time ones (62.4% vs. 9.3% —
+> a previous version of this README cited "~3×, 5% to 15–16%", which matched neither the notebook's
+> printed output). **Important nuance found in this review:** ~84% of reviews on late orders are
+> written *before* the package actually arrives (99% of those after the promised date had already
+> passed) — so much of the "delay effect" reflects frustration from waiting on a package already
+> known to be late, not the experience of receiving it late. Proactive status communication during
+> the wait — not only improving punctuality — is the action this actually supports
+> (`notebooks/03_negative_reviews.ipynb`, Section 3b).
 
 ---
 
 ### Customer Retention by Product Category
 
-Retention = % of customers who made a second purchase (any category) after their first.  
-Only categories with ≥ 50 first-time customers included. Global retention rate: **~5%**.
+Retention = % of customers who made a second purchase (any category) after their first.
+Only categories with ≥ 50 first-time customers included in the per-category ranking below.
+**Global retention rate (entire customer base, no category filter): 3.0%** (2,801 / 93,337).
 
-**Highest retention:**
+*(A previous version of this README cited "~5%". That figure summed retained/total only over the
+20 categories a `LIMIT 20` in `sql/03_retention.sql` let through — now removed. The true rate over
+the whole base is 3.0%, matching `notebooks/05_evaluation.ipynb`, Section 3.2.)*
+
+**Highest retention** (by point estimate; see the notebook for the Wilson-CI-robust ranking):
 
 | Rank | Category | Retention Rate | Customers |
 |------|----------|---------------:|----------:|
@@ -89,9 +124,15 @@ Only categories with ≥ 50 first-time customers included. Global retention rate
 | 2 | `fashion_male_clothing` | 6.0% | 100 |
 | 3 | `furniture_bedroom` | 5.95% | 84 |
 
-**Lowest retention** (< 2%) — categories with one-off purchase behavior: `agro_industry_and_commerce`, `fashio_female_clothing`, `home_comfort_2`.
+**Lowest retention** (0%, ≥50 customers each): `costruction_tools_tools`, `tablets_printing_image`,
+`small_appliances_home_oven_and_coffee`. *(A previous version of this README named
+`agro_industry_and_commerce`, `fashio_female_clothing`, `home_comfort_2` here — those never had the
+lowest retention; they were positions 18–20 of the **best** categories, an artifact of the `LIMIT
+20` that also capped the ranking table.)*
 
-> **Insight:** Retention varies ~4.5× across categories. Loyalty strategies should be category-specific: `home_appliances` buyers are 2× more likely to return than average.
+> **Insight:** `home_appliances` retains ~3× the global rate. Loyalty strategies should be
+> category-specific; the Wilson-CI ranking in the notebook should be used over the raw point
+> estimate for categories near the 50-customer minimum, since their confidence intervals are wide.
 
 ---
 
@@ -124,23 +165,29 @@ Exploratory analysis of all 9 Olist tables (99,441 orders, 2016–2018).
 
 ### Phase 3 — Data Preparation · `notebooks/02_data_prep.ipynb`
 
-Produces `data/olist_master.csv`: **96,457 rows × 18 columns**.
+Produces `data/olist_master.csv`: **96,457 rows × 20 columns** (added `review_creation_date` and
+`review_before_delivery` in this review — see the leakage check below).
 
 **Key decisions:**
 - Filter `delivered` orders only — only these have a real delivery date to calculate delay
-- Remove `delivery_days ≤ 0` — 139 corrupt records (delivery before purchase)
+- Remove `delivery_days ≤ 0` — **13** corrupt records (delivery before purchase; a previous version
+  of this README said 139, which matched no run of this notebook)
 - Deduplicate reviews by `review_answer_timestamp` (keep latest)
 - Left join reviews — missing = no review filed, not satisfaction neutral
 - Translate product categories PT → EN; fill unmapped as `unknown`
+- **New in this review — temporal-precedence check:** verify whether `review_creation_date` comes
+  before `order_delivered_customer_date` (i.e., whether the review predates the very delivery
+  experience it's later used to explain). See Phase 4a below.
 
 **Engineered features:**
 
 | Feature | Formula | Business meaning |
 |---------|---------|-----------------|
 | `delivery_delay_days` | delivered_date − estimated_date | Positive = late, Negative = early |
-| `delivery_days` | delivered_date − purchase_date | Total wait time perceived by customer |
+| `delivery_days` | delivered_date − purchase_date | Total wait time perceived by customer — the **strongest** driver of dissatisfaction (see Phase 4a) |
 | `is_negative_review` | score ≤ 2 → 1, else 0 | Binary target for classification |
-| `freight_ratio` | freight_total / price_total | Logistics cost as share of order value |
+| `freight_ratio` | freight_total / price_total | Logistics cost as share of order value — tested as a driver, **not predictive** (R²≈0.001, non-monotonic); kept as a feature, dropped from the driver ranking |
+| `review_before_delivery` | review_creation_date < delivered_date | Flags reviews written before the package arrived — 84% of late orders' reviews (see Phase 4a) |
 | `order_month` | YYYY-MM period | Captures seasonality |
 | `order_weekday` | 0=Monday … 6=Sunday | Day-of-week purchase pattern |
 | `order_hour` | 0–23 | Time-of-day purchase pattern |
@@ -151,19 +198,39 @@ Produces `data/olist_master.csv`: **96,457 rows × 18 columns**.
 
 Statistical analysis of what predicts a `review_score ≤ 2`.
 
-**Method:** Pearson correlation, Mann-Whitney U, Kruskal-Wallis H, violin/box plots.
+**Method:** **Spearman correlation** (`review_score` is ordinal — a previous version of this
+notebook used Pearson), Mann-Whitney U with rank-biserial effect size, Kruskal-Wallis H,
+Benjamini-Hochberg correction across candidate drivers, violin/box plots.
 
-**Multicollinearity note:** `delivery_delay_days` and `delivery_days` are highly correlated (r ≈ 0.7). Use only `delivery_delay_days` as the primary predictor in any downstream model.
+**Temporal-leakage check (new in this review):** 84% of late orders (`delivery_delay_days > 0`)
+have their review written *before* the package was actually delivered — 99% of those after the
+promised delivery date had already passed. This means the "delay effect" on review score partly
+reflects frustration from waiting on a known-late package, not the experience of receiving it late.
+Quantified in Section 3b of the notebook; the effect survives in the clean (post-delivery)
+subsample, but more weakly.
+
+**Multicollinearity note:** `delivery_delay_days` and `delivery_days` are correlated at **r ≈ 0.61**
+(Pearson; a previous version of this README said "r ≈ 0.7", which did not match the notebook's own
+heatmap). Given `delivery_days` is now the stronger driver, prefer it as the primary predictor in
+any downstream model, or include both with a multicollinearity-aware model.
 
 ---
 
 ### Phase 4b — RFM Segmentation · `notebooks/04_rfm_segmentation.ipynb`
 
-RFM quintile scoring on `customer_unique_id` (stable cross-order identifier).
+RFM scoring on `customer_unique_id` (stable cross-order identifier): quintiles for Recency and
+Monetary, **explicit business cuts for Frequency** (see "Key Results" above for why — 97% of
+customers have Frequency=1, so a quintile split there ties nearly the entire base and a previous
+version of this notebook broke that tie by row order, effectively at random).
 
-- **Snapshot date:** 2018-10-18 (day after last order in dataset)
-- **Scoring:** `pd.qcut` into quintiles 1–5; R inverted (lower recency = higher score)
+- **Snapshot date:** 2018-08-30 (day after last order in dataset; a previous version of this
+  README said 2018-10-18, which matched no run of this notebook)
+- **Scoring:** R, M via `pd.qcut` into quintiles 1–5 (R inverted, lower recency = higher score);
+  F via `pd.cut` with business cuts (1 order→1, 2 orders→3, ≥3 orders→5)
 - **Segment rules:** based on R_score and F_score thresholds
+- **Validation (new in this review):** checks that don't reuse the assignment rule (Monetary and
+  observed Frequency by segment) confirm the segments discriminate real behavior, not noise — see
+  `notebooks/05_evaluation.ipynb`, Section 2.2.
 
 Produces `data/olist_rfm.csv` (93,337 rows) and `data/rfm_segments.csv`.
 
@@ -171,18 +238,23 @@ Produces `data/olist_rfm.csv` (93,337 rows) and `data/rfm_segments.csv`.
 
 | Segment | Priority | Recommended action |
 |---------|----------|-------------------|
-| Champions | Retain | VIP program, early access, referral campaigns |
+| Champions | Retain | VIP program, early access, referral campaigns (small, elite group — 0.1% of base, 3.4× the average spend) |
 | Loyal | Grow | Upsell to premium categories, volume discounts |
-| New Customers | Convert | 2nd-purchase discount email, personalized recs |
-| At Risk | Reactivate | Time-limited win-back coupon, urgency messaging |
-| Lost | Low investment | Low-cost reactivation email or CRM removal |
+| At Risk | Reactivate | Time-limited win-back coupon — small but genuine repeat-purchase history (Frequency ≥2) |
+| New Customers | Convert | 2nd-purchase discount email — the highest-volume lever (38.7% of the base) |
+| Lost | Low investment | Low-cost reactivation email; do not prioritize over `At Risk` |
 
 ---
 
 ### Phase 5 — Evaluation · `notebooks/05_evaluation.ipynb`
 
-Consolidates all findings. Validates RFM coherence (4/4 consistency checks pass),  
-cross-references RFM segments with satisfaction data, and produces a 4-panel executive dashboard.
+Consolidates all findings. Validates RFM coherence with **4/4 falsifiable consistency checks**
+(Section 2.2) — comparing Monetary and observed Frequency across segments, variables the segment
+*assignment rule itself never uses*. *(A previous version of this notebook had 4 checks that
+compared `R_score`/`F_score` between segments defined by thresholds on those same scores — they
+could not fail by construction and validated nothing against real behavior; see "Customer
+Segmentation" above for why that mattered.)* Cross-references RFM segments with satisfaction data,
+and produces a 4-panel executive dashboard.
 
 **Cross-segment satisfaction finding:** Satisfaction metrics are broadly consistent across segments — the delivery delay effect dominates over segment membership, suggesting the supply chain improvement has higher priority than CRM alone.
 
@@ -208,7 +280,7 @@ cross-references RFM segments with satisfaction data, and produces a 4-panel exe
 
 ```bash
 # 1. Clone the repository
-git clone https://github.com/LuciaPardo/olist-customer-analysis.git
+git clone https://github.com/luciaparvaz/olist-customer-analysis.git
 cd olist-customer-analysis
 
 # 2. Create and activate virtual environment
