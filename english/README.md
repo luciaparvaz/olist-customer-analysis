@@ -11,7 +11,7 @@ checked against the original Spanish notebooks. They match exactly.
 End-to-end data analysis project following the **CRISP-DM** methodology.  
 Built for a **Berlin tech portfolio** — demonstrates SQL, Python, feature engineering, RFM segmentation and business storytelling on a real-world dataset.
 
-**Dataset:** [Brazilian E-Commerce Public Dataset by Olist](https://www.kaggle.com/datasets/olistbr/brazilian-ecommerce) (Kaggle) — 100K orders, 2016–2018.
+**Dataset:** [Brazilian E-Commerce Public Dataset by Olist](https://www.kaggle.com/datasets/olistbr/brazilian-ecommerce) (Kaggle) — 100K orders, 2016–2018. Licensed **CC BY-NC-SA 4.0** (non-commercial, share-alike, attribution required). The raw CSVs are not redistributed in this repo.
 
 ![Executive dashboard — RFM segments, negative-review drivers, category retention and delivery-delay impact on review score](dashboard/dashboard_final.png)
 
@@ -24,8 +24,8 @@ Built for a **Berlin tech portfolio** — demonstrates SQL, Python, feature engi
 | Layer | Tools |
 |-------|-------|
 | Language | Python 3.10 |
-| Storage | SQLite (via `sqlite3` + SQLAlchemy) |
-| Analysis | Pandas 2.2 · NumPy 1.26 |
+| Storage | SQLite (via `sqlite3`) |
+| Analysis | Pandas 2.2 · NumPy 1.26 · statsmodels |
 | Visualization | Matplotlib 3.9 · Seaborn 0.13 · Plotly 5.22 |
 | Notebooks | Jupyter 7.2 |
 | SQL | CTEs · Window Functions · Aggregations |

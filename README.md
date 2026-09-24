@@ -3,7 +3,7 @@
 End-to-end data analysis project following the **CRISP-DM** methodology.  
 Built for a **Berlin tech portfolio** — demonstrates SQL, Python, feature engineering, RFM segmentation and business storytelling on a real-world dataset.
 
-**Dataset:** [Brazilian E-Commerce Public Dataset by Olist](https://www.kaggle.com/datasets/olistbr/brazilian-ecommerce) (Kaggle) — 100K orders, 2016–2018.
+**Dataset:** [Brazilian E-Commerce Public Dataset by Olist](https://www.kaggle.com/datasets/olistbr/brazilian-ecommerce) (Kaggle) — 100K orders, 2016–2018. Licensed **CC BY-NC-SA 4.0** (non-commercial, share-alike, attribution required). The raw CSVs are not redistributed in this repo — see [Data](#data) below.
 
 🌐 **This README is in English, but the notebooks, SQL and dashboard themselves are written in
 Spanish** (markdown prose, code comments, chart labels). A full mirror with everything translated
@@ -21,10 +21,9 @@ identical numbers; see [`english/README.md`](english/README.md).
 | Layer | Tools |
 |-------|-------|
 | Language | Python 3.10 |
-| Storage | SQLite (via `sqlite3` + SQLAlchemy) |
-| Analysis | Pandas 2.2 · NumPy 1.26 |
-| Visualization | Matplotlib 3.9 · Seaborn 0.13 |
-| ML | Scikit-learn 1.5 |
+| Storage | SQLite (via `sqlite3`) |
+| Analysis | Pandas 2.2 · NumPy 1.26 · statsmodels |
+| Visualization | Matplotlib 3.9 · Seaborn 0.13 · Plotly |
 | Notebooks | Jupyter 7.2 |
 | SQL | CTEs · Window Functions · Aggregations |
 
@@ -44,7 +43,7 @@ identical numbers; see [`english/README.md`](english/README.md).
 │   ├── 03_negative_reviews.ipynb  # Phase 4 — Negative Review Drivers
 │   ├── 04_rfm_segmentation.ipynb  # Phase 4 — RFM Segmentation
 │   └── 05_evaluation.ipynb        # Phase 5 — Evaluation & Recommendations
-├── dashboard/                     # 23 exported charts (PNG)
+├── dashboard/                     # 24 exported charts (PNG)
 ├── requirements.txt
 └── README.md
 ```
@@ -271,7 +270,7 @@ and produces a 4-panel executive dashboard.
 
 ### Phase 6 — Deployment
 
-- 23 charts exported to `dashboard/` (PNG, 2.5 MB total)
+- 24 charts exported to `dashboard/` (PNG, 3.0 MB total)
 - `sql/02_data_preparation.sql` — reproducible master table in pure SQL
 - `sql/03_retention.sql` — retention analysis with `ROW_NUMBER`, `RANK`, `NTILE` window functions
 - All notebooks executed with full cell outputs committed
@@ -361,7 +360,7 @@ Run notebooks in this order:
 | `notebooks/03_negative_reviews.ipynb` | Correlation analysis, statistical tests, driver ranking, category breakdown |
 | `notebooks/04_rfm_segmentation.ipynb` | Quintile scoring, segment assignment, scatter/violin/heatmap visuals |
 | `notebooks/05_evaluation.ipynb` | Segment validation, cross-analysis, executive dashboard, recommendations |
-| `dashboard/` | 23 PNG charts covering all analysis phases |
+| `dashboard/` | 24 PNG charts covering all analysis phases |
 
 ---
 
