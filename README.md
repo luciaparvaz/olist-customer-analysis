@@ -165,8 +165,8 @@ Exploratory analysis of all 9 Olist tables (99,441 orders, 2016–2018).
 | **Volume** | 99K orders · 112K items · 99K reviews |
 | **Data quality** | `review_comment_title`: 88% null · `geolocation`: 261K duplicates |
 | **Review score** | Bimodal distribution — peaks at 1 and 5 (typical e-commerce pattern) |
-| **Payment value** | Strong right skew — median R$86.50, max R$13,440 |
-| **Order status** | 96%+ delivered, <1% cancelled |
+| **Payment value** | Strong right skew — median R$105.29, max R$13,664 |
+| **Order status** | 97%+ delivered, <1% cancelled |
 | **Trend** | Sustained growth; peak Nov 2017 (Brazilian Black Friday) |
 
 ---
